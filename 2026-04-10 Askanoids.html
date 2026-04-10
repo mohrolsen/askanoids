@@ -92,33 +92,6 @@
     }
     .ctrl-row { display: flex; align-items: center; gap: 10px; }
 
-    /* ── Power-up buttons ─────────────────────────────────── */
-    .pu-btn {
-      position: relative; width: 54px; height: 54px;
-      flex-shrink: 0; cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .pu-btn .ring-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-    .ring-bg  { fill: none; stroke: #00ffff18; stroke-width: 3; }
-    .ring-fg  {
-      fill: none; stroke: #00ffff; stroke-width: 3; stroke-linecap: round;
-      transform: rotate(-90deg); transform-origin: 50% 50%;
-      filter: drop-shadow(0 0 4px #00ffff88);
-    }
-    .pu-inner {
-      position: absolute; inset: 7px; border-radius: 50%;
-      background: #08081a; border: 1px solid #00ffff33;
-      display: flex; align-items: center; justify-content: center; flex-direction: column;
-    }
-    .pu-btn:active .pu-inner { background: #00ffff18; }
-    .pu-icon-svg { width: 22px; height: 22px; overflow: visible; }
-    .pu-lbl { font-size: 7px; color: #00ffff66; letter-spacing: 0.08em; margin-top: 1px; }
-    .pu-key {
-      position: absolute; bottom: 1px; right: 4px;
-      font-size: 8px; color: #00ffff44; letter-spacing: 0.1em;
-    }
-    .pu-btn.empty .pu-inner { border-color: #00ffff18; }
-    .pu-btn.empty .pu-icon-svg { opacity: 0.15; }
 
     /* ── Infinity scrubber ────────────────────────────────── */
     .scrubber-wrap { flex: 1; display: flex; flex-direction: column; gap: 5px; touch-action: none; }
@@ -201,6 +174,7 @@
     <div class="stat-col">
       <span class="stat-label">WAVE</span>
       <span class="stat-value" id="wave-val">—</span>
+      <span class="stat-label" id="tier-label" style="color:#00ff4188;margin-top:1px;">SINGLE</span>
     </div>
     <div class="stat-col mid">
       <span class="stat-label">SCORE</span>
@@ -261,43 +235,12 @@
   <!-- Controls -->
   <div id="controls">
     <div class="ctrl-row">
-      <!-- Infinity scrubber -->
       <div class="scrubber-wrap">
         <div id="angle-display">↑ 000°</div>
         <div id="scrubber">
           <div id="scrubber-ticks"></div>
           <div id="scrubber-thumb"></div>
           <div id="scrubber-hint"><span>‹</span><span>›</span></div>
-        </div>
-      </div>
-
-      <!-- Both power-up slots on the right -->
-      <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0;">
-        <!-- Slot 0 (Z) -->
-        <div class="pu-btn empty" id="slot0" onclick="activatePowerUp(0)" style="width:48px;height:48px;">
-          <svg class="ring-svg" viewBox="0 0 60 60">
-            <circle class="ring-bg" cx="30" cy="30" r="26"/>
-            <circle class="ring-fg" id="ring0" cx="30" cy="30" r="26"
-                    stroke-dasharray="163.4" stroke-dashoffset="163.4"/>
-          </svg>
-          <div class="pu-inner">
-            <svg class="pu-icon-svg" id="icon0" viewBox="0 0 24 24"></svg>
-            <span class="pu-lbl" id="lbl0">EMPTY</span>
-          </div>
-          <span class="pu-key">Z</span>
-        </div>
-        <!-- Slot 1 (X) -->
-        <div class="pu-btn empty" id="slot1" onclick="activatePowerUp(1)" style="width:48px;height:48px;">
-          <svg class="ring-svg" viewBox="0 0 60 60">
-            <circle class="ring-bg" cx="30" cy="30" r="26"/>
-            <circle class="ring-fg" id="ring1" cx="30" cy="30" r="26"
-                    stroke-dasharray="163.4" stroke-dashoffset="163.4"/>
-          </svg>
-          <div class="pu-inner">
-            <svg class="pu-icon-svg" id="icon1" viewBox="0 0 24 24"></svg>
-            <span class="pu-lbl" id="lbl1">EMPTY</span>
-          </div>
-          <span class="pu-key">X</span>
         </div>
       </div>
     </div>
@@ -326,65 +269,56 @@ function setSVGHTML(el, html) {
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const CFG = {
-  fireRateBase: 5,       // shots/sec
-  fireRateRapid: 10,
   bulletSpeed:  400,
   bulletR:      4,
   muzzleOffset: 45,      // px from center to barrel tip
-  turretBaseR:  22,
   hitR:         26,      // enemy reaching this radius = turret hit
-  dropR:        13,      // collision radius of collectible drop
-  dropDrift:    20,      // px/s drift toward center
   spawnR:       272,     // enemy spawn radius
   spawnInterval: 0.42,   // seconds between spawns
-  waveDelay:    3.2,     // seconds between waves
+  waveDelay:    3.5,     // seconds between waves
   keyRotDeg:    380,     // degrees/sec for arrow keys
-  RING_C:       163.4,   // stroke-dasharray circumference for r=26
+
+  // Turret upgrade tiers — unlocked automatically by wave
+  tiers: [
+    { label:'SINGLE',  angles:[0],                     rate:5,  piercing:false }, // wave 1–2
+    { label:'DUAL',    angles:[-14,14],                 rate:5,  piercing:false }, // wave 3–4
+    { label:'TRIPLE',  angles:[-20,0,20],               rate:6,  piercing:false }, // wave 5–6
+    { label:'QUAD',    angles:[-28,-9,9,28],            rate:6,  piercing:false }, // wave 7–9
+    { label:'LASER',   angles:[-24,-8,0,8,24],          rate:8,  piercing:true  }, // wave 10–12
+    { label:'SPREAD',  angles:[-30,-18,-6,6,18,30],     rate:10, piercing:true  }, // wave 13+
+  ],
 
   types: {
-    basic:    { size:10, hp:1, speed:42,  score:10,  color:'#00ffff', spinCls:'spin-n', dropChance:0.12 },
-    scout:    { size:8,  hp:1, speed:96,  score:20,  color:'#ff00ff', spinCls:'spin-f', dropChance:0.15 },
-    tank:     { size:18, hp:3, speed:28,  score:50,  color:'#ffff00', spinCls:'spin-s', dropChance:0.45 },
-    splitter: { size:12, hp:2, speed:58,  score:100, color:'#00ff41', spinCls:'spin-m', dropChance:0.25 },
-    boss:     { size:32, hp:8, speed:18,  score:200, color:'#ff6600', spinCls:'spin-b', dropChance:1.0  },
+    basic:    { size:10, hp:1, speed:42,  score:10,  color:'#00ffff', spinCls:'spin-n', zigzag:false },
+    scout:    { size:8,  hp:1, speed:96,  score:20,  color:'#ff00ff', spinCls:'spin-f', zigzag:false },
+    speeder:  { size:7,  hp:1, speed:145, score:30,  color:'#ff44ff', spinCls:'spin-f', zigzag:true  },
+    tank:     { size:18, hp:3, speed:28,  score:50,  color:'#ffff00', spinCls:'spin-s', zigzag:false },
+    splitter: { size:12, hp:2, speed:58,  score:100, color:'#00ff41', spinCls:'spin-m', zigzag:false },
+    armored:  { size:22, hp:6, speed:22,  score:150, color:'#ff8800', spinCls:'spin-s', zigzag:false },
+    boss:     { size:32, hp:8, speed:18,  score:200, color:'#ff6600', spinCls:'spin-b', zigzag:false },
   },
-
-  puColors: { RAPID:'#00ffff', MULTI:'#ff00ff', PIERCE:'#00ff41', SHIELD:'#ffff00', NOVA:'#ff00ff' },
-  puDuration: { RAPID:10, MULTI:10, PIERCE:10 },
-  puNames:  { RAPID:'RAPID', MULTI:'MULTI', PIERCE:'PIERCE', SHIELD:'SHIELD', NOVA:'NOVA' },
 };
 
-// ── Power-up SVG icon content (paths drawn in 24×24 viewBox) ─────────────────
-const PU_ICONS = {
-  RAPID:  `<polyline points="9,2 6,11 11,11 8,22" fill="none" stroke="#00ffff" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`,
-  MULTI:  `<circle cx="12" cy="5" r="3" fill="#ff00ff"/><circle cx="4" cy="19" r="3" fill="#ff00ff"/><circle cx="20" cy="19" r="3" fill="#ff00ff"/>`,
-  PIERCE: `<line x1="3" y1="12" x2="21" y2="12" stroke="#00ff41" stroke-width="2.2" stroke-linecap="round"/><polyline points="15,6 21,12 15,18" fill="none" stroke="#00ff41" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`,
-  SHIELD: `<polygon points="12,2 21,7 21,14 12,22 3,14 3,7" fill="none" stroke="#ffff00" stroke-width="2" stroke-linejoin="round"/>`,
-  NOVA:   `<circle cx="12" cy="12" r="2.5" fill="#ff00ff"/>
-           <line x1="12" y1="2" x2="12" y2="6" stroke="#ff00ff" stroke-width="2" stroke-linecap="round"/>
-           <line x1="12" y1="18" x2="12" y2="22" stroke="#ff00ff" stroke-width="2" stroke-linecap="round"/>
-           <line x1="2" y1="12" x2="6" y2="12" stroke="#ff00ff" stroke-width="2" stroke-linecap="round"/>
-           <line x1="18" y1="12" x2="22" y2="12" stroke="#ff00ff" stroke-width="2" stroke-linecap="round"/>
-           <line x1="5" y1="5" x2="8" y2="8" stroke="#ff00ff" stroke-width="2" stroke-linecap="round"/>
-           <line x1="16" y1="16" x2="19" y2="19" stroke="#ff00ff" stroke-width="2" stroke-linecap="round"/>
-           <line x1="19" y1="5" x2="16" y2="8" stroke="#ff00ff" stroke-width="2" stroke-linecap="round"/>
-           <line x1="5" y1="19" x2="8" y2="16" stroke="#ff00ff" stroke-width="2" stroke-linecap="round"/>`,
-};
+function tierForWave(w) {
+  if (w >= 13) return 5;
+  if (w >= 10) return 4;
+  if (w >= 7)  return 3;
+  if (w >= 5)  return 2;
+  if (w >= 3)  return 1;
+  return 0;
+}
 
 // ── Game state ────────────────────────────────────────────────────────────────
 const G = {
   phase: 'title',   // title | playing | wave_clear | game_over | paused
   wave:  0,
+  tier:  0,         // turret upgrade tier (0–5)
   score: 0,
   lives: 3,
   angle: 0,         // turret angle in degrees (0=up, 90=right)
   bullets:    [],
   enemies:    [],
-  drops:      [],
   effects:    [],
-  inventory:  [null, null],
-  pw:         { RAPID:0, MULTI:0, PIERCE:0 },
-  hasShield:  false,
   waveTimer:  0,
   spawnQueue: [],
   spawnTimer: 0,
@@ -398,7 +332,6 @@ const uid = () => ++_uid;
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 const svgRoot   = document.getElementById('svg');
 const layEnemy  = document.getElementById('enemies-layer');
-const layDrop   = document.getElementById('drops-layer');
 const layBullet = document.getElementById('bullets-layer');
 const layTurret = document.getElementById('turret-layer');
 const layFx     = document.getElementById('effects-layer');
@@ -435,25 +368,18 @@ function buildTurret() {
   if (turretGroup) turretGroup.remove();
   turretGroup = $s('g');
 
-  const multi  = G.pw.MULTI  > 0;
-  const rapid  = G.pw.RAPID  > 0;
-  const pierce = G.pw.PIERCE > 0;
-  const bc = pierce ? '#00ff41' : '#00ffff';  // barrel color
-  const bf = pierce ? 'url(#gg)' : 'url(#gc)';
-  const sc = rapid  ? '#ff00ff' : (pierce ? '#00ff41' : '#00ffff'); // stroke color
+  const tier    = CFG.tiers[G.tier];
+  const laser   = tier.piercing;
+  const bc      = laser ? '#00ff41' : '#00ffff';
+  const bf      = laser ? 'url(#gg)' : 'url(#gc)';
+  const sc      = laser ? '#00ff41' : '#00ffff';
 
-  function makeBarrel(offsetDeg) {
+  for (const offsetDeg of tier.angles) {
     const bg = $s('g', { transform: `rotate(${offsetDeg},200,200)` });
     bg.appendChild($s('rect', { x:196, y:157, width:8, height:41, rx:2, fill:bc, filter:bf }));
     bg.appendChild($s('rect', { x:194, y:152, width:12, height:7, rx:1.5, fill:bc, filter:bf }));
-    return bg;
+    turretGroup.appendChild(bg);
   }
-
-  if (multi) {
-    turretGroup.appendChild(makeBarrel(-25));
-    turretGroup.appendChild(makeBarrel(25));
-  }
-  turretGroup.appendChild(makeBarrel(0));
 
   // Base ring
   turretGroup.appendChild($s('circle', {
@@ -468,14 +394,14 @@ function buildTurret() {
   // Center dot
   turretGroup.appendChild($s('circle', { cx:200, cy:200, r:3, fill:sc, filter:'url(#gc)' }));
 
-  // Rapid pulse ring
-  if (rapid) {
+  // Laser-tier pulse ring
+  if (laser) {
     const pr = $s('circle', {
       cx:200, cy:200, r:29, fill:'none',
-      stroke:'#ff00ff', 'stroke-width':1.5, filter:'url(#gm)'
+      stroke:'#00ff41', 'stroke-width':1.5, filter:'url(#gg)'
     });
-    const a1 = $s('animate', { attributeName:'r', values:'29;35;29', dur:'0.75s', repeatCount:'indefinite' });
-    const a2 = $s('animate', { attributeName:'opacity', values:'0.8;0.15;0.8', dur:'0.75s', repeatCount:'indefinite' });
+    const a1 = $s('animate', { attributeName:'r', values:'29;36;29', dur:'0.9s', repeatCount:'indefinite' });
+    const a2 = $s('animate', { attributeName:'opacity', values:'0.7;0.1;0.7', dur:'0.9s', repeatCount:'indefinite' });
     pr.appendChild(a1); pr.appendChild(a2);
     turretGroup.appendChild(pr);
   }
@@ -499,25 +425,23 @@ function muzzlePos(angleOff) {
 }
 
 // ── Bullets ───────────────────────────────────────────────────────────────────
-function fireBullet(angleOff) {
+function fireBullet(angleOff, piercing) {
   const { x, y, vx, vy } = muzzlePos(angleOff);
-  const pierce = G.pw.PIERCE > 0;
   const el = $s('circle', {
-    r: CFG.bulletR, fill: pierce ? '#00ff41' : '#00ffff',
-    filter: pierce ? 'url(#gg)' : 'url(#gc)',
+    r: CFG.bulletR, fill: piercing ? '#00ff41' : '#00ffff',
+    filter: piercing ? 'url(#gg)' : 'url(#gc)',
   });
   layBullet.appendChild(el);
-  G.bullets.push({ id:uid(), x, y, vx, vy, el, pierces: pierce ? 3 : 1 });
+  G.bullets.push({ id:uid(), x, y, vx, vy, el, pierces: piercing ? 3 : 1 });
   spawnMuzzleFlash(x, y);
 }
 
 function autoFire(dt) {
-  const rate = G.pw.RAPID > 0 ? CFG.fireRateRapid : CFG.fireRateBase;
+  const tier = CFG.tiers[G.tier];
   G.lastFire += dt;
-  if (G.lastFire >= 1 / rate) {
+  if (G.lastFire >= 1 / tier.rate) {
     G.lastFire = 0;
-    if (G.pw.MULTI > 0) { fireBullet(-15); fireBullet(0); fireBullet(15); }
-    else                 { fireBullet(0); }
+    for (const a of tier.angles) fireBullet(a, tier.piercing);
   }
 }
 
@@ -536,10 +460,12 @@ function updateBullets(dt) {
 // ── Enemies ───────────────────────────────────────────────────────────────────
 function buildWaveQueue(w) {
   const q = [];
-  for (let i = 0; i < 3 + w * 2; i++) q.push('basic');
-  if (w >= 3) for (let i = 0; i < w - 2; i++) q.push('scout');
-  if (w >= 5) for (let i = 0; i < Math.floor((w - 4) / 2); i++) q.push('tank');
-  if (w >= 6) for (let i = 0; i < Math.floor((w - 5) / 2); i++) q.push('splitter');
+  for (let i = 0; i < 2 + w * 2; i++) q.push('basic');
+  if (w >= 2) for (let i = 0; i < w - 1; i++) q.push('scout');
+  if (w >= 4) for (let i = 0; i < w - 3; i++) q.push('speeder');
+  if (w >= 4) for (let i = 0; i < Math.floor((w - 3) / 2); i++) q.push('tank');
+  if (w >= 5) for (let i = 0; i < Math.floor((w - 4) / 2); i++) q.push('splitter');
+  if (w >= 7) for (let i = 0; i < Math.floor((w - 6) / 2); i++) q.push('armored');
   if (w % 5 === 0) q.push('boss');
   // Fisher-Yates shuffle
   for (let i = q.length - 1; i > 0; i--) {
@@ -559,7 +485,7 @@ function spawnEnemy(type, pos) {
     y = 200 + CFG.spawnR * Math.sin(a);
   }
   const half = tc.size / 2;
-  const gf = { 'basic':'url(#gc)', 'scout':'url(#gm)', 'tank':'url(#gy)', 'splitter':'url(#gg)', 'boss':'url(#gy)' }[type];
+  const gf = { 'basic':'url(#gc)', 'scout':'url(#gm)', 'speeder':'url(#gm)', 'tank':'url(#gy)', 'splitter':'url(#gg)', 'armored':'url(#gy)', 'boss':'url(#gy)' }[type];
 
   const grp = $s('g');
   const rect = $s('rect', {
@@ -589,6 +515,8 @@ function spawnEnemy(type, pos) {
     speed: tc.speed * speedScale,
     grp, hpEl,
     drift: (Math.random() - 0.5) * 0.25,
+    t: 0,
+    zigzagAmp: tc.zigzag ? (Math.random() * 1.0 + 0.7) : 0,
   });
 }
 
@@ -598,9 +526,11 @@ function updateEnemies(dt) {
     const dx = 200 - e.x, dy = 200 - e.y;
     const dist = Math.hypot(dx, dy);
     if (dist < CFG.hitR) { hitTurret(); removeEnemy(i); continue; }
-    const base = Math.atan2(dy, dx);
-    e.x += Math.cos(base + e.drift) * e.speed * dt;
-    e.y += Math.sin(base + e.drift) * e.speed * dt;
+    e.t += dt;
+    const base   = Math.atan2(dy, dx);
+    const swerve = e.zigzagAmp > 0 ? Math.sin(e.t * 4.5) * e.zigzagAmp : e.drift;
+    e.x += Math.cos(base + swerve) * e.speed * dt;
+    e.y += Math.sin(base + swerve) * e.speed * dt;
     e.grp.setAttribute('transform', `translate(${e.x.toFixed(1)},${e.y.toFixed(1)})`);
   }
 }
@@ -613,13 +543,10 @@ function removeEnemy(i) {
 function killEnemy(e, i) {
   const tc = CFG.types[e.type];
   spawnExplosion(e.x, e.y, tc.color, e.type === 'boss' ? 14 : 8);
-  if (Math.random() < tc.dropChance) spawnDrop(e.x, e.y);
-  // Splitter spawns 2 basics
   if (e.type === 'splitter') {
     spawnEnemy('basic', { x:e.x + 10, y:e.y });
     spawnEnemy('basic', { x:e.x - 10, y:e.y });
   }
-  // Boss splits into 2 tanks
   if (e.type === 'boss') {
     spawnEnemy('tank', { x:e.x + 18, y:e.y });
     spawnEnemy('tank', { x:e.x - 18, y:e.y });
@@ -633,54 +560,6 @@ function killEnemy(e, i) {
   removeEnemy(i);
 }
 
-// ── Power-up drops ────────────────────────────────────────────────────────────
-const PU_POOL = ['RAPID','MULTI','PIERCE','SHIELD','NOVA'];
-
-function spawnDrop(x, y) {
-  const type = PU_POOL[Math.floor(Math.random() * PU_POOL.length)];
-  const col  = CFG.puColors[type];
-  const grp  = $s('g');
-
-  const ring = $s('circle', { r:CFG.dropR, fill:col+'18', stroke:col, 'stroke-width':1.5, filter:'url(#gm)' });
-  const a1 = $s('animate', { attributeName:'r', values:`${CFG.dropR};${CFG.dropR+5};${CFG.dropR}`, dur:'1.1s', repeatCount:'indefinite' });
-  const a2 = $s('animate', { attributeName:'opacity', values:'1;0.45;1', dur:'1.1s', repeatCount:'indefinite' });
-  ring.appendChild(a1); ring.appendChild(a2);
-  grp.appendChild(ring);
-
-  // Icon centered at (0,0) scaled to fit inside ring
-  const ig = $s('g', { transform:'translate(-9,-9) scale(0.75)' });
-  setSVGHTML(ig, PU_ICONS[type]);
-  grp.appendChild(ig);
-
-  grp.setAttribute('transform', `translate(${x.toFixed(1)},${y.toFixed(1)})`);
-  layDrop.appendChild(grp);
-  G.drops.push({ id:uid(), type, x, y, grp });
-}
-
-function updateDrops(dt) {
-  for (const d of G.drops) {
-    const dx = 200 - d.x, dy = 200 - d.y;
-    const dist = Math.hypot(dx, dy);
-    if (dist > 1) {
-      d.x += (dx / dist) * CFG.dropDrift * dt;
-      d.y += (dy / dist) * CFG.dropDrift * dt;
-      d.grp.setAttribute('transform', `translate(${d.x.toFixed(1)},${d.y.toFixed(1)})`);
-    }
-  }
-}
-
-function collectDrop(drop, di, bi) {
-  const slot = G.inventory[0] === null ? 0 : G.inventory[1] === null ? 1 : -1;
-  if (slot === -1) return false; // full
-  G.inventory[slot] = drop.type;
-  refreshSlotUI(slot);
-  spawnRingEffect(drop.x, drop.y, CFG.puColors[drop.type]);
-  drop.grp.remove();
-  G.drops.splice(di, 1);
-  G.bullets[bi].el.remove();
-  G.bullets.splice(bi, 1);
-  return true;
-}
 
 // ── Collisions ────────────────────────────────────────────────────────────────
 function checkCollisions() {
@@ -698,10 +577,20 @@ function checkCollisions() {
         if (e.hp <= 0) {
           killEnemy(e, ei);
         } else {
-          // Brief damage flash
-          const rect = e.grp.querySelector('rect');
-          rect.style.opacity = '0.25';
-          setTimeout(() => { if (rect.isConnected) rect.style.opacity = ''; }, 110);
+          // Armored: color shifts red as it takes damage
+          if (e.type === 'armored') {
+            const dmgColors = ['#ff0044','#ff2200','#ff4400','#ff6600','#ff8800','#ffaa00'];
+            const col = dmgColors[Math.max(0, e.hp - 1)];
+            const rect = e.grp.querySelector('rect');
+            rect.setAttribute('stroke', col);
+            rect.setAttribute('fill', col + '22');
+            if (e.hpEl) e.hpEl.setAttribute('fill', col);
+          } else {
+            // Brief damage flash
+            const rect = e.grp.querySelector('rect');
+            rect.style.opacity = '0.25';
+            setTimeout(() => { if (rect.isConnected) rect.style.opacity = ''; }, 110);
+          }
         }
         b.pierces--;
         if (b.pierces <= 0) {
@@ -710,83 +599,9 @@ function checkCollisions() {
       }
     }
     if (gone) continue;
-
-    // vs drops
-    for (let di = G.drops.length - 1; di >= 0; di--) {
-      const d = G.drops[di];
-      if (Math.hypot(b.x - d.x, b.y - d.y) < CFG.bulletR + CFG.dropR) {
-        collectDrop(d, di, bi);
-        break;
-      }
-    }
   }
 }
 
-// ── Power-ups ─────────────────────────────────────────────────────────────────
-function activatePowerUp(slot) {
-  const type = G.inventory[slot];
-  if (!type || G.phase !== 'playing') return;
-  G.inventory[slot] = null;
-  refreshSlotUI(slot);
-  if (type === 'SHIELD') {
-    G.hasShield = true;
-    spawnRingEffect(200, 200, '#ffff00', 40);
-  } else if (type === 'NOVA') {
-    doNova();
-  } else {
-    G.pw[type] = (G.pw[type] || 0) + CFG.puDuration[type];
-    buildTurret();
-  }
-}
-window.activatePowerUp = activatePowerUp;
-
-function doNova() {
-  for (let i = G.enemies.length - 1; i >= 0; i--) {
-    const e = G.enemies[i];
-    spawnExplosion(e.x, e.y, CFG.types[e.type].color, 6);
-    G.score += CFG.types[e.type].score;
-    e.grp.remove();
-  }
-  G.enemies = [];
-  document.getElementById('score-val').textContent = G.score;
-  spawnNovaBlast();
-}
-
-function updatePowerUps(dt) {
-  let needRebuild = false;
-  for (const p of ['RAPID','MULTI','PIERCE']) {
-    if (G.pw[p] > 0) {
-      G.pw[p] -= dt;
-      if (G.pw[p] <= 0) { G.pw[p] = 0; needRebuild = true; }
-    }
-  }
-  if (needRebuild) buildTurret();
-}
-
-// ── Slot UI ───────────────────────────────────────────────────────────────────
-function refreshSlotUI(slot) {
-  const type = G.inventory[slot];
-  const btn  = document.getElementById(`slot${slot}`);
-  const icon = document.getElementById(`icon${slot}`);
-  const lbl  = document.getElementById(`lbl${slot}`);
-  const ring = document.getElementById(`ring${slot}`);
-  if (type) {
-    btn.classList.remove('empty');
-    const col = CFG.puColors[type];
-    setSVGHTML(icon, PU_ICONS[type]);
-    ring.setAttribute('stroke', col);
-    ring.setAttribute('stroke-dashoffset', '0');
-    ring.style.filter = `drop-shadow(0 0 4px ${col})`;
-    lbl.textContent = CFG.puNames[type];
-  } else {
-    btn.classList.add('empty');
-    icon.innerHTML = '';
-    ring.setAttribute('stroke', '#00ffff');
-    ring.setAttribute('stroke-dashoffset', CFG.RING_C);
-    ring.style.filter = '';
-    lbl.textContent = 'EMPTY';
-  }
-}
 
 // ── Lives UI ──────────────────────────────────────────────────────────────────
 function buildLivesUI() {
@@ -813,11 +628,6 @@ function updateLivesUI() {
 
 // ── Turret hit ────────────────────────────────────────────────────────────────
 function hitTurret() {
-  if (G.hasShield) {
-    G.hasShield = false;
-    spawnRingEffect(200, 200, '#ffff00', 30);
-    return;
-  }
   G.lives--;
   updateLivesUI();
   doFlash();
@@ -900,11 +710,16 @@ function updateEffects(dt) {
 
 // ── Wave system ───────────────────────────────────────────────────────────────
 function startWave(n) {
+  const newTier = tierForWave(n);
+  const tierChanged = newTier > G.tier;
   G.wave = n;
+  G.tier = newTier;
   G.spawnQueue = buildWaveQueue(n);
   G.spawnTimer = 0;
   G.phase = 'playing';
   document.getElementById('wave-val').textContent = n;
+  document.getElementById('tier-label').textContent = CFG.tiers[newTier].label;
+  if (tierChanged) buildTurret();
   clearOverlay();
 }
 
@@ -958,7 +773,7 @@ function showTitleScreen() {
   tap.appendChild(a1);
   layOver.appendChild(tap);
 
-  layOver.appendChild(svgText(200, 308, 9, '#00ffff33', 1.5, '← → ROTATE  ·  Z X POWER-UPS'));
+  layOver.appendChild(svgText(200, 308, 9, '#00ffff33', 1.5, 'DRAG OR ← → TO ROTATE TURRET'));
 
   if (G.highScore > 0) {
     layOver.appendChild(svgText(200, 340, 12, '#ffff00', 2, `HI: ${G.highScore}`, 'url(#gy)'));
@@ -971,8 +786,19 @@ function showTitleScreen() {
 
 function showWaveClearMsg(nextWave) {
   clearOverlay();
-  layOver.appendChild(svgText(200, 185, 16, '#ff00ff', 3, `WAVE ${nextWave} INCOMING`, 'url(#gm)'));
-  const cd = svgText(200, 228, 32, '#00ffff', 0, String(Math.ceil(CFG.waveDelay)), 'url(#gc)');
+  const newTier = tierForWave(nextWave);
+  const upgrading = newTier > G.tier;
+  const yBase = upgrading ? 165 : 185;
+  layOver.appendChild(svgText(200, yBase, 16, '#ff00ff', 3, `WAVE ${nextWave} INCOMING`, 'url(#gm)'));
+  if (upgrading) {
+    const up = svgText(200, yBase + 32, 13, '#00ff41', 2,
+      `▲ CANNON: ${CFG.tiers[newTier].label}`, 'url(#gg)');
+    const a1 = $s('animate', { attributeName:'opacity', values:'1;0.3;1', dur:'0.7s', repeatCount:'indefinite' });
+    up.appendChild(a1);
+    layOver.appendChild(up);
+  }
+  const cd = svgText(200, yBase + (upgrading ? 76 : 52), 32, '#00ffff', 0,
+    String(Math.ceil(CFG.waveDelay)), 'url(#gc)');
   layOver.appendChild(cd);
   layOver._cd = cd;
 }
@@ -1010,19 +836,16 @@ function showPauseScreen() {
 
 // ── Game lifecycle ────────────────────────────────────────────────────────────
 function startGame() {
-  // Clear layers
-  [layEnemy, layBullet, layDrop, layFx].forEach(l => { while(l.firstChild) l.firstChild.remove(); });
+  [layEnemy, layBullet, layFx].forEach(l => { while(l.firstChild) l.firstChild.remove(); });
 
   Object.assign(G, {
-    phase:'playing', wave:0, score:0, lives:3, angle:0,
-    bullets:[], enemies:[], drops:[], effects:[],
-    inventory:[null, null], pw:{ RAPID:0, MULTI:0, PIERCE:0 },
-    hasShield:false, lastFire:0, spawnQueue:[], spawnTimer:0,
+    phase:'playing', wave:0, tier:0, score:0, lives:3, angle:0,
+    bullets:[], enemies:[], effects:[],
+    lastFire:0, spawnQueue:[], spawnTimer:0,
   });
 
   document.getElementById('score-val').textContent = '0';
   updateAngleDisplay();
-  refreshSlotUI(0); refreshSlotUI(1);
   buildLivesUI();
   buildTurret();
   startWave(1);
@@ -1058,9 +881,7 @@ function update(dt) {
   autoFire(dt);
   updateBullets(dt);
   updateEnemies(dt);
-  updateDrops(dt);
   checkCollisions();
-  updatePowerUps(dt);
   updateEffects(dt);
   checkWaveClear();
 }
@@ -1121,8 +942,6 @@ document.addEventListener('mouseup',    () => scrubEnd());
 
 document.addEventListener('keydown', e => {
   G.keys[e.key] = true;
-  if (e.key === 'z' || e.key === 'Z') activatePowerUp(0);
-  if (e.key === 'x' || e.key === 'X') activatePowerUp(1);
   if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') {
     if (G.phase === 'playing') { G.phase = 'paused'; showPauseScreen(); }
     else if (G.phase === 'paused') { G.phase = 'playing'; clearOverlay(); }
