@@ -278,14 +278,20 @@ const CFG = {
   waveDelay:    3.5,     // seconds between waves
   keyRotDeg:    200,     // degrees/sec for arrow keys
 
-  // Turret upgrade tiers — unlocked automatically by wave
+  // Turret upgrade tiers — one per wave for first 9, then every 3
   tiers: [
-    { label:'SINGLE',  angles:[0],                     rate:5,  piercing:false }, // wave 1–2
-    { label:'DUAL',    angles:[-14,14],                 rate:5,  piercing:false }, // wave 3–4
-    { label:'TRIPLE',  angles:[-20,0,20],               rate:6,  piercing:false }, // wave 5–6
-    { label:'QUAD',    angles:[-28,-9,9,28],            rate:6,  piercing:false }, // wave 7–9
-    { label:'LASER',   angles:[-24,-8,0,8,24],          rate:8,  piercing:true  }, // wave 10–12
-    { label:'SPREAD',  angles:[-30,-18,-6,6,18,30],     rate:10, piercing:true  }, // wave 13+
+    { label:'SINGLE',  angles:[0],                              rate:5,  piercing:false }, // wave 1
+    { label:'DUAL',    angles:[-15,15],                          rate:6,  piercing:false }, // wave 2
+    { label:'TRIPLE',  angles:[-22,0,22],                        rate:7,  piercing:false }, // wave 3
+    { label:'QUAD',    angles:[-28,-9,9,28],                     rate:7,  piercing:false }, // wave 4
+    { label:'PENTA',   angles:[-32,-16,0,16,32],                 rate:8,  piercing:false }, // wave 5
+    { label:'PIERCE',  angles:[-28,-14,0,14,28],                 rate:8,  piercing:true  }, // wave 6
+    { label:'HEXA',    angles:[-35,-21,-7,7,21,35],              rate:9,  piercing:true  }, // wave 7
+    { label:'RAPID',   angles:[-30,-18,-6,6,18,30],              rate:12, piercing:true  }, // wave 8
+    { label:'LASER',   angles:[-32,-22,-11,0,11,22,32],          rate:14, piercing:true  }, // wave 9
+    { label:'STORM',   angles:[-36,-24,-12,0,12,24,36],          rate:16, piercing:true  }, // wave 12
+    { label:'NOVA',    angles:[-40,-28,-16,-5,5,16,28,40],       rate:18, piercing:true  }, // wave 15
+    { label:'OMEGA',   angles:[-40,-30,-20,-10,0,10,20,30,40],   rate:20, piercing:true  }, // wave 18+
   ],
 
   types: {
@@ -300,11 +306,17 @@ const CFG = {
 };
 
 function tierForWave(w) {
-  if (w >= 13) return 5;
-  if (w >= 10) return 4;
-  if (w >= 7)  return 3;
-  if (w >= 5)  return 2;
-  if (w >= 3)  return 1;
+  if (w >= 18) return 11;
+  if (w >= 15) return 10;
+  if (w >= 12) return 9;
+  if (w >= 9)  return 8;
+  if (w >= 8)  return 7;
+  if (w >= 7)  return 6;
+  if (w >= 6)  return 5;
+  if (w >= 5)  return 4;
+  if (w >= 4)  return 3;
+  if (w >= 3)  return 2;
+  if (w >= 2)  return 1;
   return 0;
 }
 
