@@ -120,28 +120,48 @@
     .pu-btn.empty .pu-inner { border-color: #00ffff18; }
     .pu-btn.empty .pu-icon-svg { opacity: 0.15; }
 
-    /* ── Angle slider ─────────────────────────────────────── */
-    .slider-wrap { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    /* ── Infinity scrubber ────────────────────────────────── */
+    .scrubber-wrap { flex: 1; display: flex; flex-direction: column; gap: 5px; touch-action: none; }
     #angle-display {
       font-size: 10px; color: #00ffff88; letter-spacing: 0.1em;
       text-align: center; text-shadow: 0 0 6px #00ffff44;
     }
-    #angle-slider {
-      -webkit-appearance: none; appearance: none;
-      width: 100%; height: 6px; border-radius: 3px; outline: none; cursor: pointer;
-      background: linear-gradient(to right, #00ffff88, #ff00ff88);
-      box-shadow: 0 0 8px #00ffff33;
+    #scrubber {
+      position: relative; height: 38px; border-radius: 6px;
+      background: #08081a; border: 1px solid #00ffff33;
+      overflow: hidden; cursor: grab; touch-action: none;
     }
-    #angle-slider::-webkit-slider-thumb {
-      -webkit-appearance: none; appearance: none;
-      width: 30px; height: 30px; border-radius: 50%;
-      background: #08081a; border: 2px solid #00ffff;
-      box-shadow: 0 0 10px #00ffff, 0 0 22px #00ffff44; cursor: pointer;
+    #scrubber:active { cursor: grabbing; }
+    /* scrolling tick marks as background */
+    #scrubber-ticks {
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(
+        to right,
+        #00ffff22 0px, #00ffff22 1px,
+        transparent 1px, transparent 18px
+      );
+      pointer-events: none;
     }
-    #angle-slider::-moz-range-thumb {
-      width: 30px; height: 30px; border-radius: 50%;
-      background: #08081a; border: 2px solid #00ffff;
-      box-shadow: 0 0 10px #00ffff; cursor: pointer;
+    /* gradient fade on both sides */
+    #scrubber::before, #scrubber::after {
+      content: ''; position: absolute; top: 0; bottom: 0; width: 22px;
+      z-index: 2; pointer-events: none;
+    }
+    #scrubber::before { left: 0;  background: linear-gradient(to right, #08081a, transparent); }
+    #scrubber::after  { right: 0; background: linear-gradient(to left,  #08081a, transparent); }
+    /* center thumb line */
+    #scrubber-thumb {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 3px; height: 28px; border-radius: 2px;
+      background: #00ffff; box-shadow: 0 0 8px #00ffff, 0 0 16px #00ffff55;
+      z-index: 3; pointer-events: none;
+    }
+    /* hint arrows */
+    #scrubber-hint {
+      position: absolute; inset: 0; z-index: 4; pointer-events: none;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 7px; color: #00ffff44; font-size: 13px; line-height: 1;
     }
 
     /* ── Enemy spin ───────────────────────────────────────── */
@@ -241,38 +261,44 @@
   <!-- Controls -->
   <div id="controls">
     <div class="ctrl-row">
-      <!-- Slot 0 (Z) -->
-      <div class="pu-btn empty" id="slot0" onclick="activatePowerUp(0)">
-        <svg class="ring-svg" viewBox="0 0 60 60">
-          <circle class="ring-bg" cx="30" cy="30" r="26"/>
-          <circle class="ring-fg" id="ring0" cx="30" cy="30" r="26"
-                  stroke-dasharray="163.4" stroke-dashoffset="163.4"/>
-        </svg>
-        <div class="pu-inner">
-          <svg class="pu-icon-svg" id="icon0" viewBox="0 0 24 24"></svg>
-          <span class="pu-lbl" id="lbl0">EMPTY</span>
-        </div>
-        <span class="pu-key">Z</span>
-      </div>
-
-      <!-- Slider -->
-      <div class="slider-wrap">
+      <!-- Infinity scrubber -->
+      <div class="scrubber-wrap">
         <div id="angle-display">↑ 000°</div>
-        <input type="range" id="angle-slider" min="0" max="359" step="1" value="0">
+        <div id="scrubber">
+          <div id="scrubber-ticks"></div>
+          <div id="scrubber-thumb"></div>
+          <div id="scrubber-hint"><span>‹</span><span>›</span></div>
+        </div>
       </div>
 
-      <!-- Slot 1 (X) -->
-      <div class="pu-btn empty" id="slot1" onclick="activatePowerUp(1)">
-        <svg class="ring-svg" viewBox="0 0 60 60">
-          <circle class="ring-bg" cx="30" cy="30" r="26"/>
-          <circle class="ring-fg" id="ring1" cx="30" cy="30" r="26"
-                  stroke-dasharray="163.4" stroke-dashoffset="163.4"/>
-        </svg>
-        <div class="pu-inner">
-          <svg class="pu-icon-svg" id="icon1" viewBox="0 0 24 24"></svg>
-          <span class="pu-lbl" id="lbl1">EMPTY</span>
+      <!-- Both power-up slots on the right -->
+      <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0;">
+        <!-- Slot 0 (Z) -->
+        <div class="pu-btn empty" id="slot0" onclick="activatePowerUp(0)" style="width:48px;height:48px;">
+          <svg class="ring-svg" viewBox="0 0 60 60">
+            <circle class="ring-bg" cx="30" cy="30" r="26"/>
+            <circle class="ring-fg" id="ring0" cx="30" cy="30" r="26"
+                    stroke-dasharray="163.4" stroke-dashoffset="163.4"/>
+          </svg>
+          <div class="pu-inner">
+            <svg class="pu-icon-svg" id="icon0" viewBox="0 0 24 24"></svg>
+            <span class="pu-lbl" id="lbl0">EMPTY</span>
+          </div>
+          <span class="pu-key">Z</span>
         </div>
-        <span class="pu-key">X</span>
+        <!-- Slot 1 (X) -->
+        <div class="pu-btn empty" id="slot1" onclick="activatePowerUp(1)" style="width:48px;height:48px;">
+          <svg class="ring-svg" viewBox="0 0 60 60">
+            <circle class="ring-bg" cx="30" cy="30" r="26"/>
+            <circle class="ring-fg" id="ring1" cx="30" cy="30" r="26"
+                    stroke-dasharray="163.4" stroke-dashoffset="163.4"/>
+          </svg>
+          <div class="pu-inner">
+            <svg class="pu-icon-svg" id="icon1" viewBox="0 0 24 24"></svg>
+            <span class="pu-lbl" id="lbl1">EMPTY</span>
+          </div>
+          <span class="pu-key">X</span>
+        </div>
       </div>
     </div>
   </div>
@@ -300,9 +326,9 @@ function setSVGHTML(el, html) {
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const CFG = {
-  fireRateBase: 2,       // shots/sec
-  fireRateRapid: 6,
-  bulletSpeed:  360,
+  fireRateBase: 5,       // shots/sec
+  fireRateRapid: 10,
+  bulletSpeed:  400,
   bulletR:      4,
   muzzleOffset: 45,      // px from center to barrel tip
   turretBaseR:  22,
@@ -312,7 +338,7 @@ const CFG = {
   spawnR:       272,     // enemy spawn radius
   spawnInterval: 0.42,   // seconds between spawns
   waveDelay:    3.2,     // seconds between waves
-  keyRotDeg:    190,     // degrees/sec for arrow keys
+  keyRotDeg:    380,     // degrees/sec for arrow keys
   RING_C:       163.4,   // stroke-dasharray circumference for r=26
 
   types: {
@@ -377,7 +403,6 @@ const layBullet = document.getElementById('bullets-layer');
 const layTurret = document.getElementById('turret-layer');
 const layFx     = document.getElementById('effects-layer');
 const layOver   = document.getElementById('overlay-layer');
-const slider    = document.getElementById('angle-slider');
 const flashEl   = document.getElementById('flash');
 
 // ── Init stars ────────────────────────────────────────────────────────────────
@@ -996,7 +1021,6 @@ function startGame() {
   });
 
   document.getElementById('score-val').textContent = '0';
-  slider.value = 0;
   updateAngleDisplay();
   refreshSlotUI(0); refreshSlotUI(1);
   buildLivesUI();
@@ -1017,7 +1041,6 @@ function update(dt) {
   if (G.keys['ArrowLeft'] || G.keys['ArrowRight']) {
     const dir = G.keys['ArrowRight'] ? 1 : -1;
     G.angle = ((G.angle + dir * CFG.keyRotDeg * dt) % 360 + 360) % 360;
-    slider.value = Math.round(G.angle);
     updateAngleDisplay();
     syncTurretAngle();
   }
@@ -1060,11 +1083,41 @@ function updateAngleDisplay() {
     `${dir} ${String(a).padStart(3,'0')}°`;
 }
 
-slider.addEventListener('input', () => {
-  G.angle = parseInt(slider.value, 10);
+// ── Infinity scrubber ─────────────────────────────────────────────────────────
+// Dragging right = clockwise, left = counter-clockwise. No fixed endpoints.
+const scrubberEl = document.getElementById('scrubber');
+const ticksEl    = document.getElementById('scrubber-ticks');
+const SCRUB_SENS = 0.9;  // degrees per pixel of drag
+
+let scrubActive = false;
+let scrubLastX  = 0;
+let tickOffset  = 0;  // for scrolling tick visual
+
+function scrubStart(clientX) {
+  scrubActive = true;
+  scrubLastX  = clientX;
+}
+function scrubMove(clientX) {
+  if (!scrubActive) return;
+  const dx = clientX - scrubLastX;
+  scrubLastX = clientX;
+  G.angle = ((G.angle + dx * SCRUB_SENS) % 360 + 360) % 360;
+  tickOffset = ((tickOffset - dx) % 18 + 18) % 18;
+  ticksEl.style.backgroundPositionX = `${-tickOffset}px`;
   updateAngleDisplay();
   syncTurretAngle();
-});
+}
+function scrubEnd() { scrubActive = false; }
+
+// Touch
+scrubberEl.addEventListener('touchstart',  e => { e.preventDefault(); scrubStart(e.touches[0].clientX); }, { passive:false });
+scrubberEl.addEventListener('touchmove',   e => { e.preventDefault(); scrubMove(e.touches[0].clientX);  }, { passive:false });
+scrubberEl.addEventListener('touchend',    () => scrubEnd());
+scrubberEl.addEventListener('touchcancel', () => scrubEnd());
+// Mouse (desktop)
+scrubberEl.addEventListener('mousedown', e => scrubStart(e.clientX));
+document.addEventListener('mousemove',  e => scrubMove(e.clientX));
+document.addEventListener('mouseup',    () => scrubEnd());
 
 document.addEventListener('keydown', e => {
   G.keys[e.key] = true;
