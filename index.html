@@ -905,24 +905,41 @@ function updateAngleDisplay() {
 }
 
 // ── Infinity scrubber ─────────────────────────────────────────────────────────
-// Dragging right = clockwise, left = counter-clockwise. No fixed endpoints.
-const scrubberEl = document.getElementById('scrubber');
-const ticksEl    = document.getElementById('scrubber-ticks');
-const SCRUB_SENS = 0.35;  // degrees per pixel of drag
+// Variable sensitivity: slow drag = fine control, fast drag = quick spin.
+// Speed (px/ms) is mapped through a curve to deg/px so a gentle nudge gives
+// ~0.2 deg/px precision while a flick reaches ~1.8 deg/px.
+const scrubberEl   = document.getElementById('scrubber');
+const ticksEl      = document.getElementById('scrubber-ticks');
+const SCRUB_MIN    = 0.2;   // deg/px at zero speed
+const SCRUB_MAX    = 1.8;   // deg/px at high speed
+const SCRUB_THRESH = 1.2;   // px/ms where sensitivity starts ramping up
 
-let scrubActive = false;
-let scrubLastX  = 0;
-let tickOffset  = 0;  // for scrolling tick visual
+function scrubSens(pxPerMs) {
+  // Linear ramp from MIN at 0 speed to MAX at THRESH, capped above
+  const t = Math.min(Math.abs(pxPerMs) / SCRUB_THRESH, 1);
+  return SCRUB_MIN + (SCRUB_MAX - SCRUB_MIN) * t;
+}
+
+let scrubActive  = false;
+let scrubLastX   = 0;
+let scrubLastT   = 0;
+let tickOffset   = 0;
 
 function scrubStart(clientX) {
   scrubActive = true;
   scrubLastX  = clientX;
+  scrubLastT  = performance.now();
 }
 function scrubMove(clientX) {
   if (!scrubActive) return;
-  const dx = clientX - scrubLastX;
+  const now = performance.now();
+  const dx  = clientX - scrubLastX;
+  const dt  = Math.max(now - scrubLastT, 1);   // ms, floor at 1 to avoid /0
+  const vel = dx / dt;                          // px/ms
+  const sens = scrubSens(vel);
   scrubLastX = clientX;
-  G.angle = ((G.angle + dx * SCRUB_SENS) % 360 + 360) % 360;
+  scrubLastT = now;
+  G.angle = ((G.angle + dx * sens) % 360 + 360) % 360;
   tickOffset = ((tickOffset - dx) % 18 + 18) % 18;
   ticksEl.style.backgroundPositionX = `${-tickOffset}px`;
   updateAngleDisplay();
