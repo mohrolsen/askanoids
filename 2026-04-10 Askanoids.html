@@ -276,7 +276,7 @@ const CFG = {
   spawnR:       272,     // enemy spawn radius
   spawnInterval: 0.42,   // seconds between spawns
   waveDelay:    3.5,     // seconds between waves
-  keyRotDeg:    380,     // degrees/sec for arrow keys
+  keyRotDeg:    200,     // degrees/sec for arrow keys
 
   // Turret upgrade tiers — unlocked automatically by wave
   tiers: [
@@ -289,13 +289,13 @@ const CFG = {
   ],
 
   types: {
-    basic:    { size:10, hp:1, speed:42,  score:10,  color:'#00ffff', spinCls:'spin-n', zigzag:false },
-    scout:    { size:8,  hp:1, speed:96,  score:20,  color:'#ff00ff', spinCls:'spin-f', zigzag:false },
-    speeder:  { size:7,  hp:1, speed:145, score:30,  color:'#ff44ff', spinCls:'spin-f', zigzag:true  },
-    tank:     { size:18, hp:3, speed:28,  score:50,  color:'#ffff00', spinCls:'spin-s', zigzag:false },
-    splitter: { size:12, hp:2, speed:58,  score:100, color:'#00ff41', spinCls:'spin-m', zigzag:false },
-    armored:  { size:22, hp:6, speed:22,  score:150, color:'#ff8800', spinCls:'spin-s', zigzag:false },
-    boss:     { size:32, hp:8, speed:18,  score:200, color:'#ff6600', spinCls:'spin-b', zigzag:false },
+    basic:    { size:16, hp:1, speed:38,  score:10,  color:'#00ffff', spinCls:'spin-n', zigzag:false },
+    scout:    { size:13, hp:1, speed:82,  score:20,  color:'#ff00ff', spinCls:'spin-f', zigzag:false },
+    speeder:  { size:12, hp:1, speed:120, score:30,  color:'#ff44ff', spinCls:'spin-f', zigzag:true  },
+    tank:     { size:26, hp:3, speed:24,  score:50,  color:'#ffff00', spinCls:'spin-s', zigzag:false },
+    splitter: { size:20, hp:2, speed:48,  score:100, color:'#00ff41', spinCls:'spin-m', zigzag:false },
+    armored:  { size:30, hp:6, speed:18,  score:150, color:'#ff8800', spinCls:'spin-s', zigzag:false },
+    boss:     { size:44, hp:8, speed:14,  score:200, color:'#ff6600', spinCls:'spin-b', zigzag:false },
   },
 };
 
@@ -908,7 +908,7 @@ function updateAngleDisplay() {
 // Dragging right = clockwise, left = counter-clockwise. No fixed endpoints.
 const scrubberEl = document.getElementById('scrubber');
 const ticksEl    = document.getElementById('scrubber-ticks');
-const SCRUB_SENS = 0.9;  // degrees per pixel of drag
+const SCRUB_SENS = 0.35;  // degrees per pixel of drag
 
 let scrubActive = false;
 let scrubLastX  = 0;
